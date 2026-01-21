@@ -4,6 +4,8 @@ import Order from '@/lib/models/Order'
 import Product from '@/lib/models/Product'
 import dbConnect from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     await dbConnect()

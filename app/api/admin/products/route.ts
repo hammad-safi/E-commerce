@@ -3,6 +3,8 @@ import mongoose from 'mongoose'
 import Product from '@/lib/models/Product'
 import dbConnect from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 // GET all products with pagination
 export async function GET(request: NextRequest) {
   try {
