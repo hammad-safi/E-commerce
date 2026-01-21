@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     // Get top products by orders
     const productStats: Record<string, { count: number; revenue: number }> = {}
     orders.forEach(order => {
-      order.cartItems?.forEach(item => {
+      order.cartItems?.forEach((item: any) => {
         if (!productStats[item.productId]) {
           productStats[item.productId] = { count: 0, revenue: 0 }
         }
@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
     })
 
     orders.forEach(order => {
-      order.cartItems?.forEach(item => {
-        const product = products.find(p => p._id.toString() === item.productId)
+      order.cartItems?.forEach((item: any) => {
+        const product = products.find((p: any) => p._id.toString() === item.productId)
         if (product && categoryStats[product.category]) {
           categoryStats[product.category].count += item.quantity
         }
