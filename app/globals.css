@@ -1,0 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  @apply font-sans;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply antialiased;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-200;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-secondary;
+}
+
+/* Button Styles */
+.btn-primary {
+  @apply bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-secondary transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary transition-colors;
+}
+
+.btn-outline {
+  @apply border-2 border-primary text-primary px-4 py-2 rounded-lg font-medium hover:bg-primary hover:text-white transition-colors;
+}
+
+/* Input Styles */
+input,
+textarea,
+select {
+  @apply border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-primary transition-colors;
+}
+
+/* Card Styles */
+.card {
+  @apply bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow;
+}
+
+/* Fade animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
