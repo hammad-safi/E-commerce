@@ -1,11 +1,5 @@
 import mongoose from 'mongoose'
 
-const mongodbUri = process.env.MONGODB_URI as string
-
-if (!mongodbUri) {
-  throw new Error('Please define the MONGODB_URI environment variable')
-}
-
 let cached = global as any
 
 if (!cached.mongoose) {
@@ -16,6 +10,12 @@ if (!cached.mongoose) {
 }
 
 async function connectDB() {
+  const mongodbUri = process.env.MONGODB_URI
+
+  if (!mongodbUri) {
+    throw new Error('Please define the MONGODB_URI environment variable')
+  }
+
   if (cached.mongoose.conn) {
     return cached.mongoose.conn
   }

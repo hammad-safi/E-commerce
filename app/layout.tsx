@@ -23,8 +23,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta name="theme-color" content="#FF6B35" />
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/favicon.ico" />
-        
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/icon-192x192.svg" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+
         {/* Facebook Pixel */}
         <script
           async
