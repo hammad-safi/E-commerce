@@ -1,17 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import ProductCard from '@/components/ProductCard'
 import Link from 'next/link'
-
-interface Product {
-  _id: string
-  title: string
-  price: number
-  images: string[]
-  rating: number
-  category: string
-}
+import { useProductStore } from '@/lib/store'
 
 const CATEGORIES = ['All', 'Electronics', 'Clothing', 'Books', 'Digital Products', 'Home & Garden', 'Sports']
 const PRICE_RANGES = [
@@ -22,24 +14,31 @@ const PRICE_RANGES = [
   { label: 'Above 50,000', min: 50000, max: Infinity },
 ]
 
+const ITEMS_PER_PAGE = 12
+
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [allProducts, setAllProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  // Get global product store
+  const { products, loading, fetchProducts } = useProductStore()
+
+  // Local UI state
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('All')
   const [priceRange, setPriceRange] = useState(PRICE_RANGES[0])
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [suggestions, setSuggestions] = useState<Product[]>([])
+  const [suggestions, setSuggestions] = useState<any[]>([])
   const [installPrompt, setInstallPrompt] = useState<any>(null)
   const [showInstall, setShowInstall] = useState(false)
   const [showCategoryFilter, setShowCategoryFilter] = useState(false)
   const suggestionsRef = useRef<HTMLDivElement>(null)
 
+  // Fetch products only once on mount
   useEffect(() => {
-    // Handle PWA install prompt
+    fetchProducts()
+  }, [fetchProducts])
+
+  // PWA install prompt
+  useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
       setInstallPrompt(e)
@@ -48,11 +47,6 @@ export default function ProductsPage() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 
-    // Fetch all products for suggestions
-    fetchAllProducts()
-    fetchProducts()
-
-    // Close suggestions on outside click
     const handleClickOutside = (e: MouseEvent) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
         setShowSuggestions(false)
@@ -67,51 +61,46 @@ export default function ProductsPage() {
     }
   }, [])
 
-  const fetchAllProducts = async () => {
-    try {
-      const res = await fetch('/api/products?limit=1000')
-      const data = await res.json()
-      if (data.success) {
-        setAllProducts(data.products)
-      }
-    } catch (error) {
-      console.error('Error fetching all products:', error)
+  // Memoized filtered and paginated products
+  const filteredAndPaginatedProducts = useMemo(() => {
+    let filtered = products
+
+    // Filter by search
+    if (search.trim()) {
+      filtered = filtered.filter((p) =>
+        p.title.toLowerCase().includes(search.toLowerCase())
+      )
     }
-  }
 
-  useEffect(() => {
-    fetchProducts()
-  }, [search, category, page])
-
-  const fetchProducts = async () => {
-    setLoading(true)
-    try {
-      let url = `/api/products?page=${page}&limit=12`
-      if (category !== 'All') url += `&category=${category}`
-      if (search) url += `&search=${search}`
-
-      const res = await fetch(url)
-      const data = await res.json()
-      if (data.success) {
-        setProducts(data.products)
-        setTotalPages(data.pagination.pages)
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error)
-    } finally {
-      setLoading(false)
+    // Filter by category
+    if (category !== 'All') {
+      filtered = filtered.filter((p) => p.category === category)
     }
-  }
 
-  const filteredProducts = products.filter(
-    (p) => p.price >= priceRange.min && p.price <= priceRange.max
-  )
+    // Filter by price
+    filtered = filtered.filter(
+      (p) => p.price >= priceRange.min && p.price <= priceRange.max
+    )
+
+    // Calculate total pages
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
+
+    // Paginate
+    const startIdx = (page - 1) * ITEMS_PER_PAGE
+    const endIdx = startIdx + ITEMS_PER_PAGE
+    const paginatedProducts = filtered.slice(startIdx, endIdx)
+
+    return {
+      products: paginatedProducts,
+      totalPages,
+      totalCount: filtered.length,
+    }
+  }, [products, search, category, priceRange, page])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     setPage(1)
     setShowSuggestions(false)
-    fetchProducts()
   }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,7 +109,7 @@ export default function ProductsPage() {
     setPage(1)
 
     if (value.trim()) {
-      const matches = allProducts.filter((p) =>
+      const matches = products.filter((p) =>
         p.title.toLowerCase().includes(value.toLowerCase())
       )
       setSuggestions(matches.slice(0, 5))
@@ -130,7 +119,7 @@ export default function ProductsPage() {
     }
   }
 
-  const handleSuggestionClick = (product: Product) => {
+  const handleSuggestionClick = (product: any) => {
     setSearch(product.title)
     setShowSuggestions(false)
   }
@@ -354,14 +343,14 @@ export default function ProductsPage() {
 
         {/* Products Grid */}
         <div className="lg:col-span-3">
-          {loading ? (
+          {loading && products.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500 text-lg">⏳ Loading products...</p>
             </div>
-          ) : filteredProducts.length > 0 ? (
+          ) : filteredAndPaginatedProducts.products.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                {filteredProducts.map((product) => (
+                {filteredAndPaginatedProducts.products.map((product) => (
                   <ProductCard
                     key={product._id}
                     product={{
@@ -382,11 +371,11 @@ export default function ProductsPage() {
                   ← Previous
                 </button>
                 <span className="py-2 px-4 font-bold">
-                  Page {page} of {totalPages}
+                  Page {page} of {filteredAndPaginatedProducts.totalPages}
                 </span>
                 <button
-                  onClick={() => setPage(Math.min(totalPages, page + 1))}
-                  disabled={page === totalPages}
+                  onClick={() => setPage(Math.min(filteredAndPaginatedProducts.totalPages, page + 1))}
+                  disabled={page === filteredAndPaginatedProducts.totalPages}
                   className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next →
@@ -402,6 +391,7 @@ export default function ProductsPage() {
                   setSearch('')
                   setCategory('All')
                   setPriceRange(PRICE_RANGES[0])
+                  setPage(1)
                 }}
                 className="btn-primary mt-4"
               >

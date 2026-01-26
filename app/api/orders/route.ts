@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import Order from '@/lib/models/Order'
+import Product from '@/lib/models/Product'
 import { generateOrderId } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
@@ -50,6 +51,20 @@ export async function POST(request: NextRequest) {
       paymentStatus: paymentMethod === 'COD' ? 'Pending' : 'Processing',
       orderStatus: 'Pending',
     })
+
+    // Reduce stock and increment reviews for each product in the order
+    for (const item of cartItems) {
+      await Product.findByIdAndUpdate(
+        item.productId,
+        { 
+          $inc: { 
+            stock: -item.quantity,
+            reviews: 1  // Increment review count by 1 for each purchase
+          } 
+        },
+        { new: true }
+      )
+    }
 
     await order.save()
 
